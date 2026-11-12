@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "X Shortcut Plus",
+  "version": "1.0.3",
+  "description": "Configurable shortcuts for X home feeds, pinned lists, and new posts.",
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://www.x.com/*",
+        "https://twitter.com/*",
+        "https://www.twitter.com/*"
+      ],
+      "js": [
+        "identity-main.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://www.x.com/*",
+        "https://twitter.com/*",
+        "https://www.twitter.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "X Shortcut Plus settings"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "version_name": "1.0.3-beta.1"
+}
