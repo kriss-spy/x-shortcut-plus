@@ -161,3 +161,9 @@ The privacy policy and dashboard copy describe actual local account/list metadat
 This task prepared upload assets and a store-ready package. No Chrome Web Store upload, legal agreement, review submission, or approval occurred. Google still reviews the submitted product and declarations.
 
 References checked for asset preparation: https://developer.chrome.com/docs/webstore/cws-dashboard-listing, https://developer.chrome.com/docs/webstore/images, and https://developer.chrome.com/docs/webstore/program-policies/user-data-faq.
+
+## 2026-11-13: clean store screenshot previews
+
+At the tester's request, yellow warning rows are hidden only in the temporary screenshot-capture page. Production CSS, warnings, shortcut behavior, and the extension upload ZIP are unchanged. Raw captures with warnings are retained in `store-assets/source/*-raw.png` for provenance.
+
+Regenerated both 1280×800 screenshot previews and visually checked them. The image-dimension and asset-ZIP integrity checks passed. The store asset pack and its checksum were refreshed without changing the extension version or package.

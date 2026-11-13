@@ -23,7 +23,7 @@ The store asset ZIP contains artwork and text. Do not upload it as the extension
 
 Both screenshots include actual captures of the extension's settings page. They are framed with explanatory captions. The list example uses a temporary local profile, username `example`, fictional list names, and example numeric IDs. The displayed list bindings are examples, not shipped defaults. No actual X account, posts, credentials, or private messages appear in the captures.
 
-The feed screenshot uses the shipped Ctrl+Alt defaults. The pinned-list screenshot shows separate assigned bindings and the same native browser/system cautions that appear in the real UI. See `source/` in the repository for capture images and rendered artwork sources.
+The feed screenshot uses the shipped Ctrl+Alt defaults. The pinned-list screenshot shows separate assigned bindings with generic yellow cautions hidden for the store artwork. The actual extension still displays its warnings. Raw, unmodified captures are retained as `settings-shortcuts-raw.png` and `settings-lists-raw.png` in the repository’s `store-assets/source/` directory. See `source/` in the repository for capture images and rendered artwork sources.
 
 The icon is an original vector feed-and-arrow mark. It does not use X's logo. PNG sizes 16, 32, 48, and 128 are included in the extension; 512 is supplied as an editable/export reference alongside the SVG.
 

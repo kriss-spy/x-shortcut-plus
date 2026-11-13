@@ -43,6 +43,11 @@ try {
   await page.goto(`chrome-extension://${id}/options.html`);
   await page.getByText('Settings ready. Defaults are provisional.', { exact: true }).waitFor();
   await page.locator('[data-action="list:example:100003"]').waitFor();
+  await page.locator('section').nth(0).screenshot({ path: join(source, 'settings-shortcuts-raw.png') });
+  await page.locator('section').nth(1).screenshot({ path: join(source, 'settings-lists-raw.png') });
+  // Presentation-only cleanup requested for store artwork. Production CSS and
+  // warning behavior remain unchanged; raw captures are retained above.
+  await page.addStyleTag({ content: '.warning { display: none !important; }' });
   await page.locator('section').nth(0).screenshot({ path: join(source, 'settings-shortcuts.png') });
   await page.locator('section').nth(1).screenshot({ path: join(source, 'settings-lists.png') });
 
@@ -52,11 +57,11 @@ try {
   const scenes = [
     {
       name: 'screenshot-01-shortcuts', width: 1280, height: 800,
-      html: `<div class="canvas"><div class="topbrand">${brand}</div><div class="copy"><h1>Your feeds.<br>Your shortcuts.</h1><p>Jump to For you or Following.<br>Cycle through pinned lists.</p><p class="note">Choose a key combination.<br>Changes apply to open X tabs.</p></div><div class="shot"><img src="settings-shortcuts.png" alt="Actual shortcut settings"></div><div class="caption">Captured from the extension settings.</div></div>`,
+      html: `<div class="canvas"><div class="topbrand">${brand}</div><div class="copy"><h1>Your feeds.<br>Your shortcuts.</h1><p>Jump to For you or Following.<br>Cycle through pinned lists.</p><p class="note">Choose a key combination.<br>Changes apply to open X tabs.</p></div><div class="shot"><img src="settings-shortcuts.png" alt="Actual shortcut settings"></div><div class="caption">Extension settings preview.</div></div>`,
     },
     {
       name: 'screenshot-02-pinned-lists', width: 1280, height: 800,
-      html: `<div class="canvas"><div class="topbrand">${brand}</div><div class="copy"><h1>Tabs move.<br>Shortcuts stay.</h1><p>Assign a shortcut to each pinned list. Keep its binding when tabs move or names change.</p><p class="note">Separate discovery for each account.<br>Settings stay in your browser.</p></div><div class="shot"><img src="settings-lists.png" alt="Actual pinned-list settings with example data"></div><div class="caption">Actual settings shown with example account and list data.</div></div>`,
+      html: `<div class="canvas"><div class="topbrand">${brand}</div><div class="copy"><h1>Tabs move.<br>Shortcuts stay.</h1><p>Assign a shortcut to each pinned list. Keep its binding when tabs move or names change.</p><p class="note">Separate discovery for each account.<br>Settings stay in your browser.</p></div><div class="shot"><img src="settings-lists.png" alt="Actual pinned-list settings with example data"></div><div class="caption">Settings preview with example account and list data.</div></div>`,
     },
     {
       name: 'promo-small-440x280', width: 440, height: 280,
