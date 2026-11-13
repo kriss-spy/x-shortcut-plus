@@ -1,4 +1,4 @@
-export const DEFAULTS = Object.freeze({ forYou: 'Alt+Shift+1', following: 'Alt+Shift+2', next: 'Alt+Shift+ArrowRight', previous: 'Alt+Shift+ArrowLeft', top: 'Alt+Shift+ArrowUp' });
+export const DEFAULTS = Object.freeze({ forYou: 'Alt+Shift+1', following: 'Alt+Shift+2', next: 'Alt+Shift+n', previous: 'Alt+Shift+p', top: 'Alt+Shift+k' });
 export const ACTIONS = Object.freeze({ forYou: 'For you', following: 'Following', next: 'Next feed', previous: 'Previous feed', top: 'Top and new posts' });
 const modifiers = ['Ctrl', 'Alt', 'Meta', 'Shift'];
 const special = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Enter', 'Escape', 'Tab', 'Space', 'Backspace', 'Delete', 'Plus']);

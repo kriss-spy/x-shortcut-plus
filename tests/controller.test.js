@@ -49,7 +49,8 @@ async function setup(t, initial = {}, feedMarkup = tabs()) {
   }
   function shortcut(name, target) {
     const binding = DEFAULTS[name].split('+');
-    return key(binding.at(-1), { altKey: true, shiftKey: true, code: /^[12]$/.test(binding.at(-1)) ? `Digit${binding.at(-1)}` : '' }, target);
+    const value = binding.at(-1);
+    return key(/^[a-z]$/.test(value) ? value.toUpperCase() : value, { altKey: true, shiftKey: true, code: /^[12]$/.test(value) ? `Digit${value}` : /^[a-z]$/.test(value) ? `Key${value.toUpperCase()}` : value }, target);
   }
   return { onCleanup: fn => cleanup.push(fn), window, document, storage, controller, key, shortcut, clicks, scrolls: () => scrolls };
 }

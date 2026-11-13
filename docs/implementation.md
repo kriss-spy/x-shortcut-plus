@@ -22,15 +22,15 @@ After rebuilding, reload the extension in `chrome://extensions`, then reload X t
 
 ## Default bindings
 
-These defaults are provisional. Browser shortcuts, operating system shortcuts, input language switching, and other extensions can take priority.
+These defaults match the tester-approved bindings. Browser shortcuts, operating system shortcuts, input language switching, and other extensions can take priority.
 
 | Action | Default |
 | --- | --- |
 | For you | `Alt+Shift+1` |
 | Following | `Alt+Shift+2` |
-| Next feed | `Alt+Shift+ArrowRight` |
-| Previous feed | `Alt+Shift+ArrowLeft` |
-| Top and new posts | `Alt+Shift+ArrowUp` |
+| Next feed | `Alt+Shift+n` |
+| Previous feed | `Alt+Shift+p` |
+| Top and new posts | `Alt+Shift+k` |
 | Each pinned list | Unassigned |
 
 Select a binding button and press a single key or key combination. Escape cancels recording. Tab cancels and moves focus. Select **Clear** to disable a binding. Changes save automatically and apply to open tabs.

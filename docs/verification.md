@@ -119,3 +119,17 @@ The test uses locally fulfilled HTML and starts no server. The reader's input st
 After receiving build 1.0.2 and reload instructions, the initial tester reported “worked” and requested a beta release. This confirms successful use in the tester's environment. The message did not enumerate every action or guard, so the remaining case-specific live checks above are not all marked verified.
 
 Beta 1.0.3-beta.1 retains that implementation and adds release metadata, documentation, and ZIP packaging. `npm test` passed all 33 checks. Packaging checked each generated JavaScript file with `node --check`, verified required manifest files, tested ZIP integrity, and generated a SHA-256 checksum. Release bundles exclude source maps.
+
+## 2026-11-13: tester-approved defaults, build 1.0.4-beta.1
+
+The tester requested these shipped defaults: For you `Alt+Shift+1`, Following `Alt+Shift+2`, next `Alt+Shift+n`, previous `Alt+Shift+p`, and top/new posts `Alt+Shift+k`. The default map and current release documentation now use those bindings. Stored overrides and explicit null (cleared) values remain authoritative; no settings migration overwrites them.
+
+`npm test` passed all 33 checks. The existing controller tests now send uppercase shifted letter events with `KeyN`, `KeyP`, and `KeyK` codes, matching how the approved combinations arrive in the browser.
+
+A visible Chromium check loaded the packaged extension and passed fresh-install display of all five bindings, real Shift+N/P navigation and wraparound, Shift+K with and without the banner, typing protection, and saved/cleared binding precedence after options reload. The local fixture was fulfilled from memory, with no server or live X requests. Command:
+
+```sh
+node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-xsp-new-defaults.cjs
+```
+
+`npm run package` checked generated JavaScript syntax, verified manifest entries, tested ZIP integrity, and wrote a SHA-256 checksum. The existing live-test limits remain applicable; this change did not repeat authenticated X testing.
