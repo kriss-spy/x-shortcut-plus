@@ -7,8 +7,17 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 execFileSync(process.execPath, ['scripts/build.mjs', '--release'], { stdio: 'inherit' });
 const manifest = JSON.parse(await readFile('dist/manifest.json', 'utf8'));
 if ((manifest.version_name ?? manifest.version) !== pkg.version) throw new Error('Package and extension versions differ.');
-const files = (await readdir('dist')).sort();
-const required = ['manifest.json', manifest.options_ui.page, manifest.background.service_worker, ...manifest.content_scripts.flatMap(entry => entry.js)];
+async function collectFiles(directory, prefix = '') {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const relative = prefix + entry.name;
+    if (entry.isDirectory()) files.push(...await collectFiles(`${directory}/${entry.name}`, `${relative}/`));
+    else if (entry.isFile()) files.push(relative);
+  }
+  return files;
+}
+const files = (await collectFiles('dist')).sort();
+const required = ['manifest.json', manifest.options_ui.page, manifest.background.service_worker, ...manifest.content_scripts.flatMap(entry => entry.js), ...Object.values(manifest.icons ?? {})];
 for (const file of required) if (!files.includes(file)) throw new Error(`Missing extension file: ${file}`);
 if (files.some(file => file.endsWith('.map'))) throw new Error('Release must not contain source maps.');
 for (const file of files.filter(file => file.endsWith('.js'))) execFileSync(process.execPath, ['--check', resolve('dist', file)]);

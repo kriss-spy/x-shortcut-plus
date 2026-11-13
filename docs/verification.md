@@ -147,3 +147,17 @@ node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-x
 ```
 
 ZIP integrity and generated JavaScript syntax checks passed. The fixture uses locally fulfilled HTML; the existing authenticated X, operating system, and real IME testing limits remain unchanged. The general browser/system warning is retained and does not assert that a specific Ctrl+Alt combination conflicts.
+
+## 2026-11-13: Chrome Web Store assets, build 1.0.6-beta.1
+
+Prepared an original SVG feed-and-arrow icon and transparent PNG exports at 16, 32, 48, 128, and 512 pixels. The manifest declares extension and toolbar icons. The 128-pixel icon uses a 96-pixel square mark with transparent padding, matching Google's image guidance. No third-party logo is used.
+
+Captured both settings sections from the actual packaged extension in a temporary visible Chromium profile. The profile contains only example account/list data seeded for these captures. Two 1280×800 screenshots frame those captures with explanatory copy. A 440×280 promo tile and 1400×560 marquee image use the same original icon and product typography. All four final graphics and the master icon were visually inspected.
+
+`npm test` passed all 33 checks after adding icon copying to the build. The capture itself confirms Chrome can load the icon-inclusive manifest and options page. `npm run package` validates manifest paths, JavaScript syntax, and ZIP integrity. `npm run package:store-assets` checks all exported PNG dimensions, RGBA icon formats, and asset-pack ZIP integrity; both packages include SHA-256 checksums.
+
+The privacy policy and dashboard copy describe actual local account/list metadata handling, keyboard-event matching, storage retention, and absence of extension-operated analytics or network transmission. The public privacy URL points to `PRIVACY.md` in the repository. Store screenshots label their example data and contain no live X posts, credentials, or actual account data.
+
+This task prepared upload assets and a store-ready package. No Chrome Web Store upload, legal agreement, review submission, or approval occurred. Google still reviews the submitted product and declarations.
+
+References checked for asset preparation: https://developer.chrome.com/docs/webstore/cws-dashboard-listing, https://developer.chrome.com/docs/webstore/images, and https://developer.chrome.com/docs/webstore/program-policies/user-data-faq.

@@ -1,8 +1,8 @@
 # X Shortcut Plus beta
 
-Current beta: **1.0.5-beta.1**. Chrome's numeric extension version is **1.0.5**.
+Current beta: **1.0.6-beta.1**. Chrome's numeric extension version is **1.0.6**.
 
-See [release notes and installation](docs/releases/1.0.5-beta.1.md).
+See [release notes and installation](docs/releases/1.0.6-beta.1.md).
 
 ## Build and verify
 

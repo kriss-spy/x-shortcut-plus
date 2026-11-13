@@ -24,3 +24,5 @@ button:disabled { cursor: wait; opacity: .6; }
 footer { color: #667682; padding-bottom: 24px; }
 @media (max-width: 570px) { main { margin-top: 24px; } section { padding: 18px; } .row { grid-template-columns: 1fr auto; } .name { grid-column: 1 / -1; } .binding { min-width: 0; } }
 @media (prefers-color-scheme: dark) { :root { background: #10171d; color: #e7edf2; } section { background: #19232c; border-color: #34434f; } p, footer, .detail { color: #a4b3bf; } aside, button[aria-pressed="true"] { background: #173342; } .eyebrow { color: #66b5df; } .row { border-color: #34434f; } button { background: #202e39; border-color: #536878; } button:hover { background: #244354; } .warning { color: #f1bc6a; } }
+
+footer a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
