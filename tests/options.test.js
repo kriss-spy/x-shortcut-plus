@@ -33,7 +33,7 @@ async function setup(t, initial = {}) {
 }
 test('settings assign, change, clear, and update from storage', async t => {
   const env = await setup(t);
-  assert.equal(env.button('following').textContent, 'Alt+Shift+2');
+  assert.equal(env.button('following').textContent, 'Ctrl+Alt+2');
   env.record('following', 'q', { altKey: true }); await tick();
   assert.equal(env.data()['binding:following'], 'Alt+q');
   assert.equal(env.button('following').textContent, 'Alt+q');
@@ -60,7 +60,7 @@ test('lists render safely and duplicates are scoped to the account', async t => 
     'binding:list:alice:11': 'Alt+q', 'binding:list:bob:22': 'Alt+q',
   });
   assert.equal(env.document.querySelector('img'), null);
-  assert.equal(env.document.querySelectorAll('.warning:not([hidden])').length, 0);
+  for (const action of ['list:alice:11', 'list:bob:22']) assert.equal(env.button(action).parentElement.querySelector('.warning').hidden, true);
   env.record('following', 'q', { altKey: true }); await tick();
   assert.match(env.button('following').parentElement.textContent, /Duplicate/);
   assert.match(env.button('list:alice:11').parentElement.textContent, /Duplicate/);
@@ -69,11 +69,11 @@ test('lists render safely and duplicates are scoped to the account', async t => 
 test('recording cancels on Escape, Tab and blur; composition does not assign', async t => {
   const env = await setup(t);
   env.button('following').click(); env.key('Escape');
-  assert.equal(env.button('following').textContent, 'Alt+Shift+2');
+  assert.equal(env.button('following').textContent, 'Ctrl+Alt+2');
   env.button('following').click(); env.key('Tab');
-  assert.equal(env.button('following').textContent, 'Alt+Shift+2');
+  assert.equal(env.button('following').textContent, 'Ctrl+Alt+2');
   env.button('following').focus(); env.button('following').click(); env.button('top').focus();
-  assert.equal(env.button('following').textContent, 'Alt+Shift+2');
+  assert.equal(env.button('following').textContent, 'Ctrl+Alt+2');
   env.button('following').click();
   env.document.dispatchEvent(new env.window.CompositionEvent('compositionstart'));
   env.key('j');
@@ -86,6 +86,6 @@ test('failed storage writes preserve the previous value and report failure', asy
   const env = await setup(t);
   env.fail(); env.record('following', 'q', { altKey: true }); await tick();
   assert.equal(env.data()['binding:following'], undefined);
-  assert.equal(env.button('following').textContent, 'Alt+Shift+2');
+  assert.equal(env.button('following').textContent, 'Ctrl+Alt+2');
   assert.match(env.document.querySelector('#status').textContent, /Could not save/);
 });

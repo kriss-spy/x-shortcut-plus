@@ -50,14 +50,14 @@ async function setup(t, initial = {}, feedMarkup = tabs()) {
   function shortcut(name, target) {
     const binding = DEFAULTS[name].split('+');
     const value = binding.at(-1);
-    return key(/^[a-z]$/.test(value) ? value.toUpperCase() : value, { altKey: true, shiftKey: true, code: /^[12]$/.test(value) ? `Digit${value}` : /^[a-z]$/.test(value) ? `Key${value.toUpperCase()}` : value }, target);
+    return key(binding.includes('Shift') && /^[a-z]$/.test(value) ? value.toUpperCase() : value, { ctrlKey: binding.includes('Ctrl'), altKey: binding.includes('Alt'), shiftKey: binding.includes('Shift'), metaKey: binding.includes('Meta'), code: /^[12]$/.test(value) ? `Digit${value}` : /^[a-z]$/.test(value) ? `Key${value.toUpperCase()}` : value }, target);
   }
   return { onCleanup: fn => cleanup.push(fn), window, document, storage, controller, key, shortcut, clicks, scrolls: () => scrolls };
 }
 const tick = (ms = 130) => new Promise(resolve => setTimeout(resolve, ms));
 
 test('canonical bindings preserve modifiers, digit defaults, and native inventory', () => {
-  assert.equal(bindingFromEvent({ key: '!', code: 'Digit1', altKey: true, shiftKey: true }), DEFAULTS.forYou);
+  assert.equal(bindingFromEvent({ key: '!', code: 'Digit1', altKey: true, shiftKey: true }), 'Alt+Shift+1');
   assert.equal(bindingFromEvent({ key: 'A', shiftKey: true }), 'Shift+a');
   assert.equal(bindingFromEvent({ key: 'Dead' }), null);
   assert.equal(bindingFromEvent({ key: 'a', getModifierState: () => true }), null);
@@ -123,15 +123,15 @@ test('typing, shadow editors, dialogs, menus, media, composition and repeats pas
   }
   const host = env.document.createElement('div'); env.document.body.append(host);
   const input = env.document.createElement('input'); host.attachShadow({ mode: 'open' }).append(input);
-  const event = new env.window.KeyboardEvent('keydown', { key: '2', code: 'Digit2', altKey: true, shiftKey: true, bubbles: true, cancelable: true, composed: true });
+  const event = new env.window.KeyboardEvent('keydown', { key: '2', code: 'Digit2', ctrlKey: true, altKey: true, bubbles: true, cancelable: true, composed: true });
   input.dispatchEvent(event); assert.equal(event.defaultPrevented, false); host.remove();
   for (const markup of ['<div role="dialog"></div>', '<dialog open></dialog>', '<div role="menu"></div>', '<div role="listbox"></div>']) {
     env.document.body.insertAdjacentHTML('beforeend', markup);
     assert.equal(env.shortcut('following'), false); env.document.body.lastChild.remove();
   }
-  assert.equal(env.key('2', { code: 'Digit2', altKey: true, shiftKey: true, repeat: true }), false);
-  assert.equal(env.key('2', { code: 'Digit2', altKey: true, shiftKey: true, isComposing: true }), false);
-  assert.equal(env.key('2', { code: 'Digit2', altKey: true, shiftKey: true, keyCode: 229 }), false);
+  assert.equal(env.key('2', { code: 'Digit2', ctrlKey: true, altKey: true, repeat: true }), false);
+  assert.equal(env.key('2', { code: 'Digit2', ctrlKey: true, altKey: true, isComposing: true }), false);
+  assert.equal(env.key('2', { code: 'Digit2', ctrlKey: true, altKey: true, keyCode: 229 }), false);
   env.window.dispatchEvent(new env.window.CompositionEvent('compositionstart'));
   assert.equal(env.shortcut('following'), false);
   env.window.dispatchEvent(new env.window.CompositionEvent('compositionend'));

@@ -1,13 +1,13 @@
 # X Shortcut Plus
 
-**Beta 1.0.4-beta.1**: configurable keyboard shortcuts for X Home feeds and pinned lists.
+**Beta 1.0.5-beta.1**: configurable keyboard shortcuts for X Home feeds and pinned lists.
 
 - Jump to For you, Following, or a pinned list.
 - Cycle feeds in their displayed order, with wraparound.
 - Scroll to the top and load new posts through X’s banner, without reloading.
 - Assign or clear shortcuts in extension settings.
 
-[Beta installation and release notes](docs/releases/1.0.4-beta.1.md) · [Build and verify](BETA.md) · [Verification record](docs/verification.md)
+[Beta installation and release notes](docs/releases/1.0.5-beta.1.md) · [Build and verify](BETA.md) · [Verification record](docs/verification.md)
 
 The extension runs locally, requests only `storage`, and makes no private X API requests. Pinned-list bindings use numeric list identity and remain assigned after tabs move or lists change names.
 

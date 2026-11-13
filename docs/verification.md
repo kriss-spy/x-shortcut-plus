@@ -133,3 +133,17 @@ node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-x
 ```
 
 `npm run package` checked generated JavaScript syntax, verified manifest entries, tested ZIP integrity, and wrote a SHA-256 checksum. The existing live-test limits remain applicable; this change did not repeat authenticated X testing.
+
+## 2026-11-13: Ctrl+Alt defaults, build 1.0.5-beta.1
+
+The tester replaced the Alt+Shift defaults with Ctrl+Alt+1, Ctrl+Alt+2, Ctrl+Alt+n, Ctrl+Alt+p, and Ctrl+Alt+k. All five defaults and current release documentation now match that request. No saved custom binding or explicit clear is migrated or overwritten.
+
+All 33 automated checks passed. The controller input helper now derives Ctrl, Alt, Shift, and Meta flags from the configured default. Typing/composition fixtures exercise Ctrl+Alt+2. Options tests continue to verify account-scoped duplicate handling while allowing the expected general Ctrl warning on the global defaults.
+
+The release build passed visible Chromium checks using real Ctrl+Alt key events: fresh-install settings displayed all five defaults, direct feeds and cycling worked with wraparound, the top action handled both banner states without reload, typing was protected, and saved/cleared overrides remained effective after reload. Command:
+
+```sh
+node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-xsp-ctrl-alt.cjs
+```
+
+ZIP integrity and generated JavaScript syntax checks passed. The fixture uses locally fulfilled HTML; the existing authenticated X, operating system, and real IME testing limits remain unchanged. The general browser/system warning is retained and does not assert that a specific Ctrl+Alt combination conflicts.
