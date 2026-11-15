@@ -276,3 +276,12 @@ The installed build also passed a live account switch from an empty reply to pos
 Packaging checks passed. Unsent draft text and attachments remain outside this restoration feature. No post or message was sent during testing. The bridge uses an internal frontend router shape that can change with X updates.
 
 A second live account-shortcut press switched back to `krisspy39` and again retained the exact reply ID, original background post, reply preview, and cleared return record. Chrome reported installed version `1.1.4-beta.1`. The tester’s original tab was still an empty new-post composer, with no reply ID. After checking that its editor was empty, the test returned that tab to the supplied post and reopened its reply through X’s native shortcut. The original tab then showed the correct reply ID, background post, and reply preview. Temporary tabs were closed. No post or message was sent.
+
+
+## Chrome Web Store submission, 1.1.4-beta.1
+
+After the tester confirmed the reply restoration and authorized publication, all 69 tests and package checks passed. Source and the updated public privacy policy were pushed in commit `5574d3a`.
+
+The project-local CLI uploaded `release/x-shortcut-plus-1.1.4-beta.1.zip`, then the explicit `publish` subcommand returned `Pending review`. Chrome’s numeric version is `1.1.4`. Google has accepted the submission for review; this does not establish approval or public availability.
+
+The package SHA-256 is `e3700ad5772cb90b466d3241245e94d58e6164df928ad4890f73caef50429ba3`. Credentials remained in the private configured environment file and were not committed. Pre-existing CLI dependency changes and `AGENTS.md` remain outside the release commit.
