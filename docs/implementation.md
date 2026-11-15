@@ -30,16 +30,21 @@ These defaults match the tester-approved bindings. Browser shortcuts, operating 
 | Following | `Ctrl+Alt+2` |
 | Next feed | `Ctrl+Alt+n` |
 | Previous feed | `Ctrl+Alt+p` |
-| Top and new posts | `Ctrl+Alt+k` |
+| Feed 3 through feed 9 by position | `Ctrl+Alt+3` through `Ctrl+Alt+9` |
+| Selected post author | `Ctrl+Alt+u` |
+| Next signed-in account | `Ctrl+Alt+a` |
+| Top and new posts (optional) | Unassigned; use X’s native `.` for new posts |
 | Each pinned list | Unassigned |
 
 Select a binding button and press a single key or key combination. Escape cancels recording. Tab cancels and moves focus. Select **Clear** to disable a binding. Changes save automatically and apply to open tabs.
 
-Letters use the key reported by the keyboard layout. Number-row digits use their physical digit position, including when Shift changes their printed character. Numpad digits use the reported character. Sequences are not configurable in v1.
+Letters use the key reported by the keyboard layout. Number-row digits use their physical digit position, including when Shift changes their printed character. Numpad digits use the reported character. Sequences are not configurable. The author action preserves X’s native `g` sequences.
 
 Native X conflicts produce a warning. Assigning a warned binding explicitly overrides that native shortcut when the extension can perform the action. Duplicate bindings disable all affected actions in that account. A binding can be reused for lists in different accounts.
 
 ## Feed behavior
+
+Position shortcuts follow Home’s current displayed order, including lists with unknown IDs. They can return through Home from other routes. Each position is configurable.
 
 The extension reads Home's displayed tab order. The first two Home tabs identify For you and Following. Pinned lists use their numeric ID from `/i/lists/<id>` links or the `List:<id>` React keys confirmed in the user's live tab capture. Labels and numeric tab positions do not determine identity.
 
@@ -49,13 +54,23 @@ Direct shortcuts can return through Home from another route. They wait up to fou
 
 Top and new posts operates on Home and list routes. It scrolls to the top and clicks a recognized banner before the first post. It waits up to one second for a banner that appears after scrolling. Without a recognized banner, it only scrolls. It never calls page reload. Banner text recognition currently covers specific English, Simplified Chinese, and Japanese forms; other wording only scrolls.
 
-A small `MAIN`-world content script reads only the list keys on rendered Home tab elements. It publishes validated numeric IDs as DOM attributes. The isolated shortcut script requests a synchronous refresh before acting, so recycled tabs cannot retain an old ID. The reader does not use extension APIs, read timeline data, or send network requests.
+A small `MAIN`-world content script reads only the list keys on rendered Home tab elements. It publishes validated numeric IDs as DOM attributes. The isolated shortcut script requests a synchronous refresh before acting, so recycled tabs cannot retain an old ID. The reader does not use extension APIs, read timeline data, or send network requests. The MAIN script also hosts a separate, validated reply-navigation bridge. It locates X’s history object on the profile link’s React ancestry and opens only the saved reply composer. It does not submit posts or call X APIs. This internal router adapter is verified against live X but can change.
 
 React keys are an internal frontend detail. If X changes their format, unidentified tabs remain available for next/previous, but cannot receive a persistent individual binding. The extension preserves previously saved identities until complete discovery becomes available again.
 
+## Author and account shortcuts
+
+The author action clicks the profile link in the focused post’s `User-Name` block. On a post detail route, it can use the main post without focus. It excludes quoted posts, replies selected only by visibility, sidebar suggestions, and the signed-in account’s profile navigation link. Use X’s `j` and `k` to focus a post first. Without a confirmed post and profile link, the shortcut passes through.
+
+The account action opens `SideNav_AccountSwitcher_Button`. It recognizes the captured `UserCell` button by its `Switch to @<handle>` label and matching `UserAvatar-Container-<handle>` identity. It does not require a named list container or a row for the current account. If the current account is absent, it selects the first displayed alternative. The previous named-list adapter remains supported, including wraparound. It never selects login, add-account, or logout controls. The menu has three seconds to render. Escape, pointer input, blur, composition, or another extension action cancels a pending selection.
+
+Before selecting an account, the action stores this tab’s relative URL, source and target handles, and selected Home feed in X’s per-tab `sessionStorage`. The record expires after 30 seconds. After X confirms the target handle, the extension returns from `/home` to the saved URL, including query and fragment, at most once. On Home, it restores a known list by ID or an unidentified feed by position. A missing list cannot be restored. Reply composers also retain their reply post ID, background page URL, and self-thread flag from X’s navigation state. After the target account loads, the extension visits the background page and reopens the same reply through X’s in-app router. It does not treat `/compose/post` alone as a complete reply state. Exact scroll position is not restored.
+
+Unexpected account changes, unrelated navigation, invalid records, or expired records cancel restoration. If session storage is blocked, the extension does not switch accounts. The button selector and identity fields come from the user’s signed-in markup. Regression checks use a minimized copy of that control. A full signed-in live check remains required.
+
 ## Keyboard and account handling
 
-Shortcuts pass through inputs, editable ancestors, shadow editors with visible event paths, and active composition. The extension also ignores composition boundary keys for 100 ms. Visible dialogs and menus, focused media controls, repeats, and AltGraph combinations pass through. X's `g` and `a` prefixes reserve the next unmodified key for 1.5 seconds. Native listeners receive keys the extension does not handle.
+Shortcuts pass through inputs, editable ancestors, shadow editors with visible event paths, and active composition. The extension also ignores composition boundary keys for 100 ms. Visible dialogs and menus, focused media controls, repeats, and AltGraph combinations pass through. A modified account shortcut is an exception on photo/video viewer and `/compose/post` routes. It can use the background sidebar controls while X marks them `aria-hidden`. Other shortcuts retain their guards. Account switching restores the URL but does not copy unsent reply text across accounts. X's `g` and `a` prefixes reserve the next unmodified key for 1.5 seconds. Native listeners receive keys the extension does not handle.
 
 Settings use `chrome.storage.local`, with one key per action. List bindings include the observed account handle and list ID. Reordering or renaming a list preserves its binding. Unpinning a list removes its settings row; re-pinning the same ID restores the saved binding.
 

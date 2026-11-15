@@ -1,13 +1,16 @@
 # X Shortcut Plus
 
-**Beta 1.0.6-beta.1**: configurable keyboard shortcuts for X Home feeds and pinned lists.
+**Beta 1.1.4-beta.1**: configurable keyboard shortcuts for X feeds, post authors, and account switching.
 
 - Jump to For you, Following, or a pinned list.
 - Cycle feeds in their displayed order, with wraparound.
-- Scroll to the top and load new posts through X’s banner, without reloading.
+- Select feeds 1–9 with `Ctrl+Alt+1` through `Ctrl+Alt+9`.
+- Open the selected post’s author with `Ctrl+Alt+u`.
+- Switch to the next signed-in account with `Ctrl+Alt+a` and restore the current URL.
+- Use X’s native `.` to load new posts, or assign the optional top-and-new-posts action.
 - Assign or clear shortcuts in extension settings.
 
-[Beta installation and release notes](docs/releases/1.0.6-beta.1.md) · [Build and verify](BETA.md) · [Verification record](docs/verification.md)
+[Beta installation and release notes](docs/releases/1.1.4-beta.1.md) · [Build and verify](BETA.md) · [Verification record](docs/verification.md)
 
 [Privacy policy](PRIVACY.md) · [Chrome Web Store upload assets](docs/store/README.md)
 

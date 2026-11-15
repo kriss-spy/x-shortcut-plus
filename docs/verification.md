@@ -167,3 +167,112 @@ References checked for asset preparation: https://developer.chrome.com/docs/webs
 At the tester's request, yellow warning rows are hidden only in the temporary screenshot-capture page. Production CSS, warnings, shortcut behavior, and the extension upload ZIP are unchanged. Raw captures with warnings are retained in `store-assets/source/*-raw.png` for provenance.
 
 Regenerated both 1280×800 screenshot previews and visually checked them. The image-dimension and asset-ZIP integrity checks passed. The store asset pack and its checksum were refreshed without changing the extension version or package.
+
+## 2026-11-15: issue fixes, candidate 1.1.0-beta.1
+
+Reviewed all five open issues, their bodies, and the screenshots attached to #1 and #5. The screenshots show repeated generic cautions and a selected timeline post. They do not expose account-menu selectors or establish post-focus behavior.
+
+The warning regression failed before the change:
+
+```sh
+node --test --test-name-pattern='default shortcuts do not' tests/controller.test.js
+```
+
+Observed failure: `Ctrl+Alt+1` returned the generic browser warning instead of `null`. The rule flagged every Ctrl binding. The revised rule does not flag Ctrl+Alt defaults. Native and duplicate warnings remain.
+
+Added regression checks for feed positions, optional top/new-posts behavior, focused and detail-page authors, and account restoration. `npm test` passes 52 tests. Account checks include delayed rendering, wraparound, cancellation, source/target identity, exact URL retention, feed identity after reordering, storage failure, expiry, malformed records, and external URLs. An integration check found that stale-feed quarantine prevented clearing a completed return record. Restoration now runs without reusing the quarantined feeds.
+
+Visible Chromium fixture command:
+
+```sh
+node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-xsp-next.cjs
+```
+
+Observed passes:
+
+- Real `Ctrl+Alt+3` selects the current third tab after reordering, without stable list IDs.
+- Native `.` reaches the page listener, and typing prevents feed navigation.
+- `Ctrl+Alt+u` opens the focused author profile.
+- `Ctrl+Alt+a` selects the next signed-in fixture account and survives a full document reload.
+- The original post URL, query, and fragment return after X’s simulated Home redirect.
+- Default settings show no repeated warning rows and leave top/new-posts unassigned.
+- A new position binding persists after settings reload.
+- Settings fit a 390-pixel viewport. No page JavaScript errors occur.
+
+The temporary browser profile was closed and removed. The fixture intercepted X requests locally and used no live account. No server was started.
+
+`npm run package` verifies generated JavaScript syntax, required files, ZIP integrity, and SHA-256 output for this candidate. No store upload occurred.
+
+Authenticated X remains untested for the new account-menu selectors and author-focus assumptions. These checks do not verify current X behavior, real IME input, operating system shortcuts, or other extensions. Issues #1–5 remain open for live acceptance.
+
+## Account control captured from live X, candidate 1.1.1-beta.1
+
+The tester reported that the account shortcut opened the panel without switching. They supplied the opener and an alternative-account button. The latter is `button[data-testid="UserCell"]`, labeled `Switch to @projectarisu`, with a matching `UserAvatar-Container-projectarisu` descendant.
+
+A minimized regression using those attributes, without the assumed named container or current-account row, failed:
+
+```sh
+node --test --test-name-pattern='captured account button' tests/account-switcher.test.js
+```
+
+Observed before the fix: zero account clicks instead of one. The old adapter could not discover the supplied standalone control. Selection also required a current-account row, which the new explicit destination does not need.
+
+The revised adapter validates the explicit switch label against the avatar identity. It selects the first displayed alternative when the current account is absent. It preserves support for the previous named-list form and does not select unrelated user cells. `npm test` passes 57 checks.
+
+Visible Chromium command:
+
+```sh
+node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-xsp-account-capture.cjs
+```
+
+The fixture uses the captured control structure without the assumed container or current-account row. Real keyboard input selected the alternative account, reloaded the document through Home, and restored the original post URL, query, and fragment. Other feed, author, typing, native-period, settings persistence, narrow-layout, and page-error checks passed. The temporary profile was closed and removed.
+
+Packaging checks passed for `release/x-shortcut-plus-1.1.1-beta.1.zip`. These are captured-markup fixture checks. Live X account switching remains unverified. No store upload occurred.
+
+## Account-panel focus transfer, candidate 1.1.2-beta.1
+
+The tester reported needing two account-shortcut presses. A new controller regression focused a post, then moved focus into the account panel while opening it. Before the fix, `node --test --test-name-pattern='one account shortcut survives focus' tests/controller.test.js` failed with zero account clicks instead of one.
+
+The capture-phase window blur listener also received descendant element blur events. The listener canceled the pending account action during focus transfer. Restricting cancellation to `event.target === window` makes the regression pass. A separate check confirms that actual window blur still cancels a pending switch. All 59 automated checks pass.
+
+The visible Chromium fixture `/tmp/playwright-test-xsp-account-focus.cjs`, run through the Playwright skill runner, also moved focus from a post into the opening panel. One real `Ctrl+Alt+a` selected the alternative account, reloaded through Home, and restored the exact URL. Other keyboard, settings, layout, and page-error checks passed. Packaging and diff checks passed. Live X confirmation remains pending.
+
+## Media and reply-composer account switching, candidate 1.1.3-beta.1
+
+The tester reported that account switching stopped on photo routes and `/compose/post`. Live inspection of the supplied photo page confirmed modal dialogs and an `aria-hidden` background sidebar containing the profile link and account-menu button. Clicking that button programmatically opened a usable account panel while the media view remained open.
+
+`node --test --test-name-pattern='account shortcut switches from protected' tests/controller.test.js` reproduced two failures before the change. The revised controller resolves the action before applying dialog guards. Only modified account shortcuts on photo/video and composer routes receive the exception. The account adapter can use the `aria-hidden` sidebar and permits the dialogs present when the action begins. Other shortcuts retain their guards. Ordinary unmodified keys and input-method composition remain protected. All 63 automated checks pass.
+
+Visible Chromium command:
+
+```sh
+node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-xsp-account-overlays.cjs
+```
+
+Both modal-route checks passed with a focused fixture editor and hidden sidebar. One real key combination selected an account, reloaded through Home, and restored the original URL. Existing keyboard, settings, layout, and page-error checks passed.
+
+After installation, live Chrome checks also passed in a separate test tab. On `/Kabocya_Na/status/2121861256151994453/photo/1`, one `Ctrl+Alt+a` switched from `projectarisu` to `krisspy39` and restored the exact photo route. The test then opened an empty `/compose/post` view. One press switched back to `projectarisu` and restored the composer route. Both return records cleared. The original account was active at the end, and temporary tabs were closed.
+
+The installed extension retained its ID and Chrome reported `1.1.3-beta.1`. Existing X tabs had no draft text and were reloaded. Draft checks returned only whether an editor was empty; no draft content was captured or copied. No post or message was sent. The live media check covered a photo; video routes are covered by the shared route rule but were not separately checked live. Draft text is not transferred across accounts.
+
+## Reply target and background restoration, candidate 1.1.4-beta.1
+
+The tester supplied before/after screenshots showing a reply composer over a specific post becoming a blank new-post composer over Home after an account switch. Both views use `/compose/post`, so the previous URL-only acceptance check missed the loss of reply state.
+
+Live inspection found `history.state.state.inReplyToStatusId`, `isSelfThreadReply`, `fromApp`, and `previousPath` on a reply opened through X’s native `r` shortcut. The reply preview itself has no status permalink. Replaying browser history state restored the reply target but still left a Home background. Calling the existing X in-app router’s `push` method restored both target and background. That router was observed in `memoizedProps.history` on the profile link’s React ancestry.
+
+The new regression `node --test --test-name-pattern='reply account return retains' tests/account-switcher.test.js` failed before the change because the saved return record contained no reply context. The revised account action stores only the numeric post ID, same-origin background URL, and self-thread flag. After the target account loads, it first visits the background page, then asks the MAIN-world bridge to open that reply through X’s own router. The bridge validates both the saved context and current background URL. It never submits posts. If the router is not ready, restoration waits within the existing record lifetime; missing router support leaves the background page open.
+
+All 69 automated checks pass. Tests cover restored target/background/composer, content-script replacement, malformed context, missing router, external URLs, and cleanup. A packaged Chromium check ran with:
+
+```sh
+node /home/krisspy/.agents/skills/playwright-skill/run.js /tmp/playwright-test-xsp-reply-restore.cjs
+```
+
+The fixture verified a full account reload, original post background, exact reply ID, reply preview, composer route, and cleared return record through the real MAIN/isolated bridge. It uses locally fulfilled fixture HTML and no server.
+
+The installed build also passed a live account switch from an empty reply to post `2121861256151994453`. The target account was `projectarisu`; the restored route was `/compose/post`, `inReplyToStatusId` matched, `previousPath` was `/Kabocya_Na/status/2121861256151994453`, the original background post link remained in the primary column, a reply preview was present, and the return record cleared. This checks the actual reply state rather than the URL alone.
+
+Packaging checks passed. Unsent draft text and attachments remain outside this restoration feature. No post or message was sent during testing. The bridge uses an internal frontend router shape that can change with X updates.
+
+A second live account-shortcut press switched back to `krisspy39` and again retained the exact reply ID, original background post, reply preview, and cleared return record. Chrome reported installed version `1.1.4-beta.1`. The tester’s original tab was still an empty new-post composer, with no reply ID. After checking that its editor was empty, the test returned that tab to the supplied post and reopened its reply through X’s native shortcut. The original tab then showed the correct reply ID, background post, and reply preview. Temporary tabs were closed. No post or message was sent.

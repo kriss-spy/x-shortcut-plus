@@ -48,7 +48,7 @@ async function setup(t, initial = {}, feedMarkup = tabs()) {
     target.dispatchEvent(event); return event.defaultPrevented;
   }
   function shortcut(name, target) {
-    const binding = DEFAULTS[name].split('+');
+    const binding = (DEFAULTS[name] ?? 'Ctrl+Alt+k').split('+');
     const value = binding.at(-1);
     return key(binding.includes('Shift') && /^[a-z]$/.test(value) ? value.toUpperCase() : value, { ctrlKey: binding.includes('Ctrl'), altKey: binding.includes('Alt'), shiftKey: binding.includes('Shift'), metaKey: binding.includes('Meta'), code: /^[12]$/.test(value) ? `Digit${value}` : /^[a-z]$/.test(value) ? `Key${value.toUpperCase()}` : value }, target);
   }
@@ -63,7 +63,7 @@ test('canonical bindings preserve modifiers, digit defaults, and native inventor
   assert.equal(bindingFromEvent({ key: 'a', getModifierState: () => true }), null);
   assert.equal(validBinding('Alt+Shift+ArrowRight'), true);
   assert.equal(validBinding('Shift+Alt+a'), false);
-  for (const value of Object.values(DEFAULTS)) assert.equal(nativeConflict(value), null);
+  for (const value of Object.values(DEFAULTS).filter(Boolean)) assert.equal(nativeConflict(value), null);
   for (const value of ['g', 'a', 'j', '.', '?', 'Shift+/', 'Ctrl+Enter', 'Meta+Enter']) assert.ok(nativeConflict(value));
 });
 test('direct home feeds and each pinned list follow identity after reorder and rename', async t => {
@@ -92,7 +92,7 @@ test('next and previous use displayed order and wrap both ends', async t => {
   assert.equal(env.clicks.at(-1), '11');
 });
 test('top activates only banner, never post buttons; no banner only scrolls', async t => {
-  const env = await setup(t);
+  const env = await setup(t, { 'binding:top': 'Ctrl+Alt+k' });
   assert.equal(env.shortcut('top'), true);
   assert.deepEqual(env.clicks, ['banner']);
   assert.equal(env.scrolls(), 1);
@@ -102,7 +102,7 @@ test('top activates only banner, never post buttons; no banner only scrolls', as
   assert.equal(env.window.location.pathname, '/home');
 });
 test('top catches a banner mounted after scrolling and cancels after route change', async t => {
-  const env = await setup(t);
+  const env = await setup(t, { 'binding:top': 'Ctrl+Alt+k' });
   env.document.querySelector('#banner').remove();
   env.shortcut('top');
   env.document.querySelector('article').insertAdjacentHTML('beforebegin', '<button id="banner">Show new posts</button>');
@@ -227,7 +227,7 @@ test('a temporarily missing account does not discard or transfer identity', asyn
   assert.equal((await env.storage.local.get())['account:bob'], undefined);
 });
 test('delayed banner action cancels on window blur and composition', async t => {
-  const env = await setup(t);
+  const env = await setup(t, { 'binding:top': 'Ctrl+Alt+k' });
   env.document.querySelector('#banner').remove();
   env.shortcut('top');
   env.window.dispatchEvent(new env.window.Event('blur'));
@@ -391,4 +391,175 @@ test('React list bridge keeps account discoveries separate during in-place switc
   env.controller.refresh();
   assert.deepEqual((await env.storage.local.get())['account:bob'].lists.map(list => list.id), ['3333333333333333333', '4444444444444444444']);
   assert.equal(env.key('q', { altKey: true }), false);
+});
+
+test('default shortcuts do not produce generic browser warnings (#1)', async () => {
+  const { bindingWarning } = await import('../src/keys.js');
+  for (const binding of Object.values(DEFAULTS).filter(Boolean)) assert.equal(bindingWarning(binding), null, binding);
+});
+
+test('feed position shortcuts follow displayed order, including unknown list IDs (#2)', async t => {
+  const env = await setup(t, {}, divTabs());
+  assert.equal(env.key('3', { code: 'Digit3', ctrlKey: true, altKey: true }), true);
+  assert.equal(env.clicks.at(-1), 'official');
+  const art = env.document.querySelector('[data-id="art"]');
+  env.document.querySelector('[data-id="official"]').before(art);
+  env.key('3', { code: 'Digit3', ctrlKey: true, altKey: true });
+  assert.equal(env.clicks.at(-1), 'art');
+  assert.equal(env.key('9', { code: 'Digit9', ctrlKey: true, altKey: true }), false);
+});
+
+test('feed position shortcuts wait for Home tabs from other routes (#2)', async t => {
+  const env = await setup(t);
+  env.window.history.pushState({}, '', '/notifications');
+  env.document.querySelector('[role="tablist"]').remove();
+  env.document.querySelector('[data-testid="AppTabBar_Home_Link"]').addEventListener('click', event => {
+    event.preventDefault(); env.window.history.pushState({}, '', '/home');
+    env.document.querySelector('main').insertAdjacentHTML('afterbegin', divTabs());
+  });
+  assert.equal(env.key('3', { code: 'Digit3', ctrlKey: true, altKey: true }), true);
+  await tick(250);
+  assert.equal(env.clicks.at(-1), 'official');
+});
+
+test('new installations leave top unassigned and preserve native period (#4)', async t => {
+  const env = await setup(t);
+  assert.equal(DEFAULTS.top, null);
+  assert.equal(env.key('.'), false);
+  assert.equal(env.key('k', { ctrlKey: true, altKey: true }), false);
+  await env.storage.local.set({ 'binding:top': 'Alt+t' });
+  assert.equal(env.key('t', { altKey: true }), true);
+  assert.deepEqual(env.clicks, ['banner']);
+});
+
+test('author shortcut opens the focused post author, not a quoted author or own profile (#5)', async t => {
+  const env = await setup(t);
+  const article = env.document.querySelector('article');
+  article.tabIndex = 0;
+  article.innerHTML = '<div data-testid="User-Name"><a href="/writer">Writer</a></div><a href="/writer/status/123"><time>Today</time></a><div data-testid="quoteTweet"><a href="/quoted/status/456"><time>Yesterday</time></a></div>';
+  let authorClicks = 0;
+  article.querySelector('a').addEventListener('click', event => { event.preventDefault(); authorClicks++; });
+  article.focus();
+  assert.equal(env.shortcut('author'), true);
+  assert.equal(authorClicks, 1);
+  assert.equal(env.clicks.length, 0);
+  env.key('g'); assert.equal(env.key('u'), false);
+  env.key('g'); assert.equal(env.key('p'), false);
+  article.blur();
+  assert.equal(env.shortcut('author'), false);
+});
+
+test('author shortcut supports an unfocused post detail and ignores editors (#5)', async t => {
+  const env = await setup(t);
+  env.window.history.pushState({}, '', '/writer/status/123');
+  const article = env.document.querySelector('article');
+  article.innerHTML = '<div data-testid="User-Name"><a href="/writer">Writer</a></div><a href="/writer/status/123"><time>Today</time></a><input>';
+  let clicked = false;
+  article.querySelector('a').addEventListener('click', event => { event.preventDefault(); clicked = true; });
+  assert.equal(env.shortcut('author'), true);
+  assert.equal(clicked, true);
+  assert.equal(env.shortcut('author', article.querySelector('input')), false);
+});
+
+test('account shortcut opens X controls and restores the URL after an in-place switch (#3)', async t => {
+  const env = await setup(t);
+  env.window.history.pushState({}, '', '/writer/status/123?ref=feed#reply');
+  env.document.body.insertAdjacentHTML('beforeend', '<button data-testid="SideNav_AccountSwitcher_Button">Accounts</button>');
+  env.document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]').addEventListener('click', () => {
+    env.document.body.insertAdjacentHTML('beforeend', '<div role="menu"><div data-testid="AccountSwitcher_LoggedInAccountList"><div role="button" data-testid="UserCell"><span>@alice</span></div><div role="button" data-testid="UserCell"><span>@bob</span></div></div></div>');
+    env.document.querySelectorAll('[data-testid="UserCell"]')[1].addEventListener('click', () => {
+      env.clicks.push('bob');
+      env.document.querySelector('[role="menu"]').remove();
+      env.document.querySelector('[data-testid="AppTabBar_Profile_Link"]').href = '/bob';
+    });
+  });
+  assert.equal(env.shortcut('nextAccount'), true);
+  assert.deepEqual(env.clicks, ['bob']);
+  env.controller.refresh();
+  assert.equal(env.window.location.pathname, '/writer/status/123');
+  assert.equal(env.window.sessionStorage.getItem('x-shortcut-plus:account-return'), null);
+});
+
+test('feed position conflicts disable both bindings without breaking other positions (#2)', async t => {
+  const env = await setup(t, { 'binding:feed4': 'Ctrl+Alt+3' }, divTabs());
+  assert.equal(env.key('3', { code: 'Digit3', ctrlKey: true, altKey: true }), false);
+  assert.deepEqual(env.clicks, []);
+  await env.storage.local.set({ 'binding:feed4': null });
+  assert.equal(env.key('3', { code: 'Digit3', ctrlKey: true, altKey: true }), true);
+  assert.equal(env.clicks.at(-1), 'official');
+});
+
+test('one account shortcut survives focus moving from the post into the opening panel', async t => {
+  const env = await setup(t);
+  const post = env.document.querySelector('article');
+  post.tabIndex = 0;
+  post.focus();
+  env.document.body.insertAdjacentHTML('beforeend', '<button data-testid="SideNav_AccountSwitcher_Button">Accounts</button>');
+  env.document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]').addEventListener('click', () => {
+    env.document.body.insertAdjacentHTML('beforeend', '<div role="menu"><button aria-label="Switch to @bob" data-testid="UserCell"><span data-testid="UserAvatar-Container-bob"></span><span>@bob</span></button></div>');
+    const target = env.document.querySelector('[data-testid="UserCell"]');
+    target.addEventListener('click', () => env.clicks.push('bob'));
+    target.focus();
+  });
+  assert.equal(env.shortcut('nextAccount'), true);
+  await tick(80);
+  assert.deepEqual(env.clicks, ['bob']);
+});
+
+test('leaving the browser window still cancels a pending account switch', async t => {
+  const env = await setup(t);
+  env.document.body.insertAdjacentHTML('beforeend', '<button data-testid="SideNav_AccountSwitcher_Button">Accounts</button>');
+  env.document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]').addEventListener('click', () => {
+    env.window.dispatchEvent(new env.window.Event('blur'));
+    env.window.setTimeout(() => {
+      env.document.body.insertAdjacentHTML('beforeend', '<button aria-label="Switch to @bob" data-testid="UserCell"><span data-testid="UserAvatar-Container-bob"></span></button>');
+      env.document.querySelector('[data-testid="UserCell"]').addEventListener('click', () => env.clicks.push('bob'));
+    }, 10);
+  });
+  env.shortcut('nextAccount');
+  await tick(100);
+  assert.deepEqual(env.clicks, []);
+});
+
+for (const route of ['/Kabocya_Na/status/2121861256151994453/photo/1', '/compose/post']) {
+  test(`account shortcut switches from protected X route ${route}`, async t => {
+    const env = await setup(t);
+    env.window.history.pushState({}, '', route);
+    const background = env.document.createElement('div');
+    background.setAttribute('aria-hidden', 'true');
+    background.append(env.document.querySelector('[data-testid="AppTabBar_Profile_Link"]'));
+    background.insertAdjacentHTML('beforeend', '<button data-testid="SideNav_AccountSwitcher_Button">Accounts</button>');
+    env.document.body.append(background);
+    env.document.body.insertAdjacentHTML('beforeend', '<div role="dialog" aria-modal="true"><div contenteditable="true" role="textbox" tabindex="0">Unsent reply</div></div>');
+    const editor = env.document.querySelector('[role="textbox"]');
+    editor.focus();
+    env.document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]').addEventListener('click', () => {
+      env.document.body.insertAdjacentHTML('beforeend', '<button aria-label="Switch to @bob" data-testid="UserCell"><span data-testid="UserAvatar-Container-bob"></span></button>');
+      env.document.querySelector('[data-testid="UserCell"]').addEventListener('click', () => env.clicks.push('bob'));
+    });
+    assert.equal(env.shortcut('following', editor), false);
+    assert.equal(env.shortcut('nextAccount', editor), true);
+    await tick(80);
+    assert.deepEqual(env.clicks, ['bob']);
+    assert.equal(JSON.parse(env.window.sessionStorage.getItem('x-shortcut-plus:account-return')).url, route);
+    assert.equal(editor.textContent, 'Unsent reply');
+  });
+}
+
+test('unmodified account bindings do not switch while typing in the composer', async t => {
+  const env = await setup(t, { 'binding:nextAccount': 'a' });
+  env.window.history.pushState({}, '', '/compose/post');
+  env.document.body.insertAdjacentHTML('beforeend', '<button data-testid="SideNav_AccountSwitcher_Button">Accounts</button><div role="dialog"><textarea>Draft</textarea></div>');
+  const editor = env.document.querySelector('textarea'); editor.focus();
+  assert.equal(env.key('a', {}, editor), false);
+  assert.equal(env.window.sessionStorage.getItem('x-shortcut-plus:account-return'), null);
+});
+
+test('account shortcut still passes through unrelated dialogs and active composition', async t => {
+  const env = await setup(t);
+  env.document.body.insertAdjacentHTML('beforeend', '<button data-testid="SideNav_AccountSwitcher_Button">Accounts</button><div role="dialog">Settings</div>');
+  assert.equal(env.shortcut('nextAccount'), false);
+  env.window.history.pushState({}, '', '/compose/post');
+  assert.equal(env.key('a', { ctrlKey: true, altKey: true, isComposing: true }), false);
+  assert.equal(env.key('a', { ctrlKey: true, altKey: true, repeat: true }), false);
 });

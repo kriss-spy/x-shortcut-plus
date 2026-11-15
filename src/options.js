@@ -109,7 +109,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 async function init() {
 try {
   items = await chrome.storage.local.get(null);
-  render(); status.textContent = 'Settings ready. Defaults are provisional.';
+  render(); status.textContent = 'Settings ready.';
 } catch { status.textContent = 'Could not load settings. Reopen this page to try again.'; }
 
 }

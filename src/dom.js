@@ -1,13 +1,14 @@
 import { LIST_ID_ATTRIBUTE, REFRESH_IDENTITIES_EVENT } from './list-identities.js';
-export function available(element) {
-  if (!element?.isConnected || element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
+export function available(element, { allowAriaHidden = false } = {}) {
+  if (!element?.isConnected || element.closest('[hidden], [inert]')
+    || (!allowAriaHidden && element.closest('[aria-hidden="true"]'))) return false;
   const style = element.ownerDocument.defaultView.getComputedStyle(element);
   return style.display !== 'none' && style.visibility !== 'hidden' && element.getClientRects().length > 0;
 }
 export function accountIdentity(document) {
   const profile = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]');
   const path = profile && new URL(profile.href, document.URL).pathname;
-  return /^\/[A-Za-z0-9_]{1,15}\/?$/.test(path ?? '') && available(profile) ? path.split('/')[1].toLowerCase() : null;
+  return /^\/[A-Za-z0-9_]{1,15}\/?$/.test(path ?? '') && available(profile, { allowAriaHidden: true }) ? path.split('/')[1].toLowerCase() : null;
 }
 export function primary(document) { return document.querySelector('[data-testid="primaryColumn"]'); }
 export function listId(element) {
@@ -56,9 +57,16 @@ export function selectedFeed(feeds, pathname) {
   if (!/^\/home\/?$/.test(pathname)) return -1;
   return feeds.findIndex(feed => feed.element.getAttribute('aria-selected') === 'true');
 }
-export function protectedContext(event, document) {
+export const OVERLAY_SELECTOR = '[role="dialog"], [aria-modal="true"], dialog[open], [role="menu"], [role="listbox"]';
+export function accountSwitchContext(document) {
+  const path = new URL(document.URL).pathname;
+  return /^\/compose\/post\/?$/.test(path)
+    || /^\/[A-Za-z0-9_]{1,15}\/status\/\d+\/(?:photo|video)\/\d+\/?$/.test(path);
+}
+export function protectedContext(event, document, { allowedOverlays = [], allowEditing = false } = {}) {
   if (document.designMode?.toLowerCase() === 'on') return true;
-  if ([...document.querySelectorAll('[role="dialog"], [aria-modal="true"], dialog[open], [role="menu"], [role="listbox"]')].some(available)) return true;
+  if ([...document.querySelectorAll(OVERLAY_SELECTOR)].some(node => available(node) && !allowedOverlays.some(overlay => overlay?.contains(node)))) return true;
+  if (allowEditing) return false;
   const nodes = [...(event.composedPath?.() ?? [event.target]), document.activeElement];
   return nodes.some(node => node?.nodeType === 1 && (node.isContentEditable || node.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], video, audio, [role="slider"], [data-testid="videoPlayer"], [data-testid="audioDock"]')));
 }
@@ -73,11 +81,33 @@ export function newPostsBanner(document) {
     return bannerText.test((button.getAttribute('aria-label') || button.textContent).trim().replace(/\s+/g, ' '));
   }) ?? null;
 }
-export function canClick(element) {
-  return available(element) && !element.matches(':disabled, [aria-disabled="true"]');
+export function canClick(element, options) {
+  return available(element, options) && !element.matches(':disabled, [aria-disabled="true"]');
 }
-export function clickTarget(element) {
-  if (!canClick(element)) return false;
+export function clickTarget(element, options) {
+  if (!canClick(element, options)) return false;
   element.click();
   return true;
+}
+
+// Read the author only from the selected post or the main post detail.
+export function postAuthor(document) {
+  const column = primary(document);
+  if (!column) return null;
+  let article = document.activeElement?.closest('article');
+  const route = /^\/([A-Za-z0-9_]{1,15})\/status\/(\d+)\/?$/.exec(new URL(document.URL).pathname);
+  if (!article && route) {
+    article = [...column.querySelectorAll('article')].find(node =>
+      [...node.querySelectorAll('a[href]')].some(link => {
+        const url = new URL(link.href, document.URL);
+        return link.querySelector('time') && url.origin === new URL(document.URL).origin
+          && url.pathname === `/${route[1]}/status/${route[2]}` && !link.closest('[data-testid="quoteTweet"]');
+      }));
+  }
+  if (!article || !column.contains(article) || !available(article)) return null;
+  return [...article.querySelectorAll('[data-testid="User-Name"] a[href]')].find(link => {
+    const url = new URL(link.href, document.URL);
+    return url.origin === new URL(document.URL).origin && /^\/[A-Za-z0-9_]{1,15}\/?$/.test(url.pathname)
+      && link.closest('article') === article && !link.closest('[data-testid="quoteTweet"]') && canClick(link);
+  }) ?? null;
 }

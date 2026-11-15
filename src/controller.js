@@ -1,7 +1,8 @@
+import { createAccountSwitcher } from './account-switcher.js';
 import { LIST_ID_ATTRIBUTE } from './list-identities.js';
 import { ACTIONS, bindingFromEvent, effectiveBinding, duplicateActions } from './keys.js';
 import { BINDING_PREFIX, accountKey, listAction, readBindings } from './storage.js';
-import { accountIdentity, canClick, clickTarget, discoverFeeds, newPostsBanner, primary, protectedContext, selectedFeed } from './dom.js';
+import { accountIdentity, canClick, clickTarget, discoverFeeds, newPostsBanner, primary, protectedContext, selectedFeed, postAuthor, accountSwitchContext, OVERLAY_SELECTOR } from './dom.js';
 
 export async function startController(window, storage) {
   const document = window.document;
@@ -24,7 +25,8 @@ export async function startController(window, storage) {
   let stopBanner = () => {};
   let lastURL = window.location.href;
   const saved = new Map();
-  const cleanup = [() => stopBanner()];
+  const accountSwitcher = createAccountSwitcher(window);
+  const cleanup = [() => stopBanner(), () => accountSwitcher.stop()];
   function listen(target, name, listener, options) {
     target.addEventListener(name, listener, options);
     cleanup.push(() => target.removeEventListener(name, listener, options));
@@ -49,10 +51,11 @@ export async function startController(window, storage) {
       lastURL = window.location.href;
       prefixUntil = 0;
     }
-    if (!account || !found) return null;
-    if (quarantine && found.bar === quarantine.bar && found.signature === quarantine.signature) return null;
+    if (!account || !found) { accountSwitcher.restore(null); return null; }
+    if (quarantine && found.bar === quarantine.bar && found.signature === quarantine.signature) { accountSwitcher.restore(null); return null; }
     quarantine = null;
     lastOwnedSnapshot = found;
+    accountSwitcher.restore(found);
     catalog = found.feeds.filter(feed => feed.id !== null).map(({ id, label, list }) => ({ id, label, list }));
     if (!found.complete) return found;
     const lists = catalog.filter(feed => feed.list).map(({ id, label }) => ({ id, label }));
@@ -72,6 +75,11 @@ export async function startController(window, storage) {
   }
   function resolveFeed(action, found) {
     if (!found) return null;
+    const position = /^feed([3-9])$/.exec(action);
+    if (position) {
+      const element = found.feeds[Number(position[1]) - 1]?.element;
+      return canClick(element) ? element : null;
+    }
     const element = found.feeds.find(feed => feed.list ? listAction(account, feed.id) === action : feed.id === action)?.element;
     return canClick(element) ? element : null;
   }
@@ -101,6 +109,11 @@ export async function startController(window, storage) {
     stopBanner = () => { observer.disconnect(); window.clearTimeout(timeout); stopBanner = () => {}; };
   }
   function begin(action, found) {
+    if (action === 'nextAccount') return accountSwitcher.begin(account, found, accountSwitchContext(document));
+    if (action === 'author') {
+      const target = postAuthor(document);
+      return target ? () => clickTarget(target) : false;
+    }
     if (action === 'top') {
       if (!/^\/(?:home\/?|i\/lists\/\d+\/?)$/.test(window.location.pathname) || !primary(document)) return false;
       return () => top();
@@ -149,8 +162,9 @@ export async function startController(window, storage) {
   }
   function keydown(event) {
     if (stopped) return;
+    if (event.key === 'Escape') accountSwitcher.cancel();
     const found = refresh();
-    if (!account || composing || event.isComposing || event.keyCode === 229 || Date.now() - compositionEnded < 100 || protectedContext(event, document)) {
+    if (!account || composing || event.isComposing || event.keyCode === 229 || Date.now() - compositionEnded < 100) {
       prefixUntil = 0; pending = null; return;
     }
     if (event.defaultPrevented || event.repeat || event.getModifierState?.('AltGraph')) return;
@@ -160,6 +174,11 @@ export async function startController(window, storage) {
     const ids = actions();
     const duplicate = duplicateActions(bindings, ids);
     const action = ids.find(id => effectiveBinding(bindings, id) === binding && !duplicate.includes(id));
+    // Only modified account shortcuts can override X media/composer guards.
+    const fromOverlay = action === 'nextAccount' && (event.ctrlKey || event.altKey || event.metaKey)
+      && accountSwitchContext(document);
+    const context = fromOverlay ? { allowedOverlays: [...document.querySelectorAll(OVERLAY_SELECTOR)], allowEditing: true } : {};
+    if (protectedContext(event, document, context)) { prefixUntil = 0; pending = null; return; }
     const run = action && begin(action, found);
     if (!run) {
       if (binding === 'g' || binding === 'a') prefixUntil = Date.now() + 1500;
@@ -169,6 +188,7 @@ export async function startController(window, storage) {
     event.stopImmediatePropagation();
     pending = null;
     actionGeneration++;
+    accountSwitcher.cancel();
     run();
   }
   const onStorage = (changes, area) => {
@@ -185,10 +205,15 @@ export async function startController(window, storage) {
   storage.onChanged.addListener(onStorage);
   cleanup.push(() => storage.onChanged.removeListener(onStorage));
   listen(window, 'keydown', keydown, true);
-  listen(window, 'compositionstart', () => { composing = true; pending = null; actionGeneration++; }, true);
+  listen(window, 'compositionstart', () => { composing = true; pending = null; actionGeneration++; accountSwitcher.cancel(); }, true);
   listen(window, 'compositionend', () => { composing = false; compositionEnded = Date.now(); }, true);
-  listen(window, 'blur', () => { actionGeneration++; pending = null; prefixUntil = 0; composing = false; }, true);
-  listen(window, 'pagehide', () => { actionGeneration++; pending = null; prefixUntil = 0; }, true);
+  listen(window, 'blur', event => {
+    // Captured element blur events also reach window during panel focus changes.
+    if (event.target !== window) return;
+    actionGeneration++; pending = null; prefixUntil = 0; composing = false; accountSwitcher.cancel();
+  }, true);
+  listen(window, 'pagehide', () => { actionGeneration++; pending = null; prefixUntil = 0; accountSwitcher.cancel(); }, true);
+  listen(window, 'pointerdown', () => accountSwitcher.cancel(), true);
   let refreshTimer;
   const observer = new window.MutationObserver(() => {
     window.clearTimeout(refreshTimer);

@@ -1,5 +1,16 @@
-export const DEFAULTS = Object.freeze({ forYou: 'Ctrl+Alt+1', following: 'Ctrl+Alt+2', next: 'Ctrl+Alt+n', previous: 'Ctrl+Alt+p', top: 'Ctrl+Alt+k' });
-export const ACTIONS = Object.freeze({ forYou: 'For you', following: 'Following', next: 'Next feed', previous: 'Previous feed', top: 'Top and new posts' });
+const positionActions = Array.from({ length: 7 }, (_, i) => [`feed${i + 3}`, i + 3]);
+export const DEFAULTS = Object.freeze({
+  forYou: 'Ctrl+Alt+1', following: 'Ctrl+Alt+2',
+  next: 'Ctrl+Alt+n', previous: 'Ctrl+Alt+p', top: null,
+  author: 'Ctrl+Alt+u', nextAccount: 'Ctrl+Alt+a',
+  ...Object.fromEntries(positionActions.map(([id, position]) => [id, `Ctrl+Alt+${position}`])),
+});
+export const ACTIONS = Object.freeze({
+  forYou: 'For you', following: 'Following',
+  next: 'Next feed', previous: 'Previous feed', top: 'Top and new posts (optional)',
+  author: 'Selected post author', nextAccount: 'Next signed-in account',
+  ...Object.fromEntries(positionActions.map(([id, position]) => [id, `Feed ${position} by position`])),
+});
 const modifiers = ['Ctrl', 'Alt', 'Meta', 'Shift'];
 const special = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Enter', 'Escape', 'Tab', 'Space', 'Backspace', 'Delete', 'Plus']);
 export function bindingFromEvent(e) {
@@ -20,6 +31,7 @@ export function validBinding(value) {
   return parts.every((part, i) => modifiers.includes(part) && (i === 0 || modifiers.indexOf(parts[i - 1]) < modifiers.indexOf(part)));
 }
 export function nativeConflict(binding) {
+  if (!binding) return null;
   const parts = binding.split('+');
   const key = parts.at(-1);
   if (binding === 'Ctrl+Enter' || binding === 'Meta+Enter') return 'X uses this to send a post.';
@@ -29,9 +41,10 @@ export function nativeConflict(binding) {
   return null;
 }
 export function bindingWarning(binding) {
+  if (!binding) return null;
   if (nativeConflict(binding)) return nativeConflict(binding);
   const key = binding.split('+').at(-1);
-  if (['Tab', 'Escape', 'Space', 'Enter', 'Backspace', 'Delete', 'Home', 'End', 'PageUp', 'PageDown'].includes(key) || /^F\d+$/.test(key) || binding.includes('Ctrl+') || binding.includes('Meta+')) return 'Browser or system shortcuts may take priority. Test this binding on your device.';
+  if (['Tab', 'Escape', 'Space', 'Enter', 'Backspace', 'Delete', 'Home', 'End', 'PageUp', 'PageDown'].includes(key) || /^F\d+$/.test(key) || /^(?:Ctrl|Meta)\+(?:[1-9]|[lnrtw])$/.test(binding)) return 'Browser or system shortcuts may take priority. Test this binding on your device.';
   return null;
 }
 export function effectiveBinding(bindings, action) {

@@ -9,17 +9,17 @@
 </head>
 <body>
   <main>
-    <header><p class="eyebrow">X Shortcut Plus / beta</p><h1>Your feeds, one shortcut away.</h1>
+    <header><p class="eyebrow">X Shortcut Plus / beta</p><h1>Your X shortcuts.</h1>
       <p>Choose a binding, then press a key combination. Changes save automatically and apply to open X tabs.</p>
     </header>
-    <aside>Shortcuts pause while you type, compose with an IME, or use dialogs and media controls. Browser and system shortcuts may take priority.</aside>
+    <aside>Feed and author shortcuts pause while you type or use dialogs and media controls. Modified account shortcuts also work in X’s media viewer and reply composer. All shortcuts pause during IME composition. Browser and system shortcuts may take priority.</aside>
     <p id="status" role="status" aria-live="polite">Loading settings…</p>
-    <section aria-labelledby="feed-heading"><h2 id="feed-heading">Feed shortcuts</h2><div id="general"></div></section>
+    <section aria-labelledby="feed-heading"><h2 id="feed-heading">Feed shortcuts</h2><p>Use X’s native <kbd>.</kbd> shortcut to load new posts. Top and new posts is optional and unassigned by default.</p><p>Ctrl+Alt+1–9 selects feeds by displayed position. Ctrl+Alt+u opens the selected post’s author. Ctrl+Alt+a switches to the next signed-in account and restores this tab’s URL.</p><div id="general"></div></section>
     <section aria-labelledby="list-heading"><h2 id="list-heading">Pinned lists</h2>
       <p>Open Home on X to discover pinned lists. Each account has its own list bindings. Reordering or renaming a list keeps its binding.</p>
       <div id="accounts"></div>
     </section>
-    <footer>Next and previous follow the displayed feed order and wrap at either end. Top and new posts activates X’s new-post banner when available, without reloading the page.<p>Your shortcut settings, X username, and discovered list names and IDs are stored locally in this browser. <a href="https://github.com/kriss-spy/x-shortcut-plus/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy policy</a>.</p></footer>
+    <footer>Next and previous follow the displayed feed order and wrap at either end. The account shortcut follows X’s signed-in account menu order. URL and Home feed restoration do not preserve the exact scroll position.<p>Your shortcut settings, X username, and discovered list names and IDs are stored locally in this browser. Account switching temporarily stores the return URL and target account in this X tab. <a href="https://github.com/kriss-spy/x-shortcut-plus/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy policy</a>.</p></footer>
   </main>
 </body>
 </html>

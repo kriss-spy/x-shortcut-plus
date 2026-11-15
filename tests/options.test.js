@@ -89,3 +89,19 @@ test('failed storage writes preserve the previous value and report failure', asy
   assert.equal(env.button('following').textContent, 'Ctrl+Alt+2');
   assert.match(env.document.querySelector('#status').textContent, /Could not save/);
 });
+
+test('defaults show no repeated warnings and expose the next-version actions (#1–5)', async t => {
+  const env = await setup(t);
+  assert.equal(env.document.querySelectorAll('.warning:not([hidden])').length, 0);
+  assert.equal(env.button('feed3').textContent, 'Ctrl+Alt+3');
+  assert.equal(env.button('feed9').textContent, 'Ctrl+Alt+9');
+  assert.equal(env.button('author').textContent, 'Ctrl+Alt+u');
+  assert.equal(env.button('nextAccount').textContent, 'Ctrl+Alt+a');
+  assert.equal(env.button('top').textContent, 'Not assigned');
+  assert.match(env.document.body.textContent, /native.*shortcut to load new posts/);
+});
+
+test('stored top binding survives the changed default (#4)', async t => {
+  const env = await setup(t, { 'binding:top': 'Ctrl+Alt+k' });
+  assert.equal(env.button('top').textContent, 'Ctrl+Alt+k');
+});
